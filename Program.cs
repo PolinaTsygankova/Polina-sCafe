@@ -39,10 +39,10 @@ class Program
                     DisplayBill();
                     break;
                 case 5:
-                    Console.WriteLine("Option 5 selected (Not implemented yet).");
+                    ClearAll();
                     break;
                 case 6:
-                    Console.WriteLine("Option 6 selected (Not implemented yet).");
+                    SaveToFile();
                     break;
                 case 7:
                     Console.WriteLine("Option 7 selected (Not implemented yet).");
@@ -190,6 +190,53 @@ class Program
         Console.WriteLine("{0,30} {1,10:C2}", "Tip Amount", tipAmount);
         Console.WriteLine("{0,30} {1,10:C2}", "GST Amount", gstAmount);
         Console.WriteLine("{0,30} {1,10:C2}", "Total Amount", totalAmount);
+    }
+
+    static void ClearAll()
+    {
+        for (int i = 0; i < MaxItems; i++)
+        {
+            itemDescriptions[i] = null;
+            itemPrices[i] = 0;
+        }
+        itemCount = 0;
+        tipMethod = 3;
+        tipValue = 0;
+
+        Console.WriteLine("All items have been cleared.");
+    }
+
+    static void SaveToFile()
+    {
+        if (itemCount == 0)
+        {
+            Console.WriteLine("Nothing to save. The bill is empty.");
+            return;
+        }
+
+        string fileName = ReadString("Enter the file path to save items to: ", 1, 10);
+
+        if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName += ".csv";
+        }
+
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(fileName))
+            {
+                for (int i = 0; i < itemCount; i++)
+                {
+                    string safeDesc = itemDescriptions[i].Contains(",") ? $"\"{itemDescriptions[i]}\"" : itemDescriptions[i];
+                    writer.WriteLine($"{safeDesc},{itemPrices[i]}");
+                }
+            }
+            Console.WriteLine($"Write to file {fileName} was successful.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error writing to file: {ex.Message}");
+        }
     }
 
     static double CalculateNetTotal()
