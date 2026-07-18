@@ -30,7 +30,7 @@ class Program
                     AddItem();
                     break;
                 case 2:
-                    Console.WriteLine("Option 2 selected (Not implemented yet).");
+                    RemoveItem();
                     break;
                 case 3:
                     AddTip();
@@ -94,6 +94,43 @@ class Program
         itemCount++;
 
         Console.WriteLine("Add item was successful.");
+    }
+
+    static void RemoveItem()
+    {
+        if (itemCount == 0)
+        {
+            Console.WriteLine("There are no items in the bill to remove.");
+            return;
+        }
+
+        Console.WriteLine("{0,-8} {1,-20} {2,10}", "ItemNo", "Description", "Price");
+        Console.WriteLine("---------------------------------------------");
+        for (int i = 0; i < itemCount; i++)
+        {
+            Console.WriteLine("{0,6}   {1,-20} {2,10:C2}", i + 1, itemDescriptions[i], itemPrices[i]);
+        }
+
+        int itemNo = ReadInt("Enter the item number to remove or 0 to cancel: ", 0, itemCount);
+        if (itemNo == 0)
+        {
+            Console.WriteLine("Removal cancelled.");
+            return;
+        }
+
+        int indexToRemove = itemNo - 1;
+
+        for (int i = indexToRemove; i < itemCount - 1; i++)
+        {
+            itemDescriptions[i] = itemDescriptions[i + 1];
+            itemPrices[i] = itemPrices[i + 1];
+        }
+
+        itemDescriptions[itemCount - 1] = null;
+        itemPrices[itemCount - 1] = 0;
+        itemCount--;
+
+        Console.WriteLine("Remove item was successful.");
     }
 
     static void AddTip()
