@@ -16,6 +16,12 @@ class Program
     static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+        for (int i = 0; i < MaxItems; i++)
+        {
+            itemDescriptions[i] = "";
+        }
+
         bool keepRunning = true;
 
         while (keepRunning)
@@ -27,25 +33,25 @@ class Program
             switch (choice)
             {
                 case 1:
-                    AddItem();
+                    HandleAddItem();
                     break;
                 case 2:
-                    RemoveItem();
+                    HandleRemoveItem();
                     break;
                 case 3:
-                    AddTip();
+                    HandleAddTip();
                     break;
                 case 4:
-                    DisplayBill();
+                    HandleDisplayBill();
                     break;
                 case 5:
-                    ClearAll();
+                    HandleClearAll();
                     break;
                 case 6:
-                    SaveToFile();
+                    HandleSaveToFile();
                     break;
                 case 7:
-                    LoadFromFile();
+                    HandleLoadFromFile();
                     break;
                 case 0:
                     Console.WriteLine("Good-bye and thanks for using this program.");
@@ -78,7 +84,9 @@ class Program
         Console.WriteLine("└─────────────────────────────┘");
     }
 
-    static void AddItem()
+    #region UI Handlers
+
+    static void HandleAddItem()
     {
         if (itemCount >= MaxItems)
         {
@@ -89,14 +97,11 @@ class Program
         string description = ReadString("Enter description: ", 3, 20);
         double price = ReadDouble("Enter price: ", 0.01);
 
-        itemDescriptions[itemCount] = description;
-        itemPrices[itemCount] = price;
-        itemCount++;
-
+        AddItem(description, price);
         Console.WriteLine("Add item was successful.");
     }
 
-    static void RemoveItem()
+    static void HandleRemoveItem()
     {
         if (itemCount == 0)
         {
@@ -118,22 +123,11 @@ class Program
             return;
         }
 
-        int indexToRemove = itemNo - 1;
-
-        for (int i = indexToRemove; i < itemCount - 1; i++)
-        {
-            itemDescriptions[i] = itemDescriptions[i + 1];
-            itemPrices[i] = itemPrices[i + 1];
-        }
-
-        itemDescriptions[itemCount - 1] = null;
-        itemPrices[itemCount - 1] = 0;
-        itemCount--;
-
+        RemoveItem(itemNo - 1);
         Console.WriteLine("Remove item was successful.");
     }
 
-    static void AddTip()
+    static void HandleAddTip()
     {
         if (itemCount == 0)
         {
@@ -148,24 +142,26 @@ class Program
         Console.WriteLine("3 - No Tip");
 
         int method = ReadInt("Enter Tip Method: ", 1, 3);
-        tipMethod = method;
+        double value = 0;
 
         if (method == 1)
         {
-            tipValue = ReadDouble("Enter tip percentage: ", 0);
+            value = ReadDouble("Enter tip percentage: ", 0);
         }
         else if (method == 2)
         {
-            tipValue = ReadDouble("Enter tip amount: ", 0);
+            value = ReadDouble("Enter tip amount: ", 0);
         }
-        else
+
+        SetTip(method, value);
+
+        if (method == 3)
         {
-            tipValue = 0;
             Console.WriteLine("Tip removed successfully.");
         }
     }
 
-    static void DisplayBill()
+    static void HandleDisplayBill()
     {
         if (itemCount == 0)
         {
@@ -192,21 +188,13 @@ class Program
         Console.WriteLine("{0,30} {1,10:C2}", "Total Amount", totalAmount);
     }
 
-    static void ClearAll()
+    static void HandleClearAll()
     {
-        for (int i = 0; i < MaxItems; i++)
-        {
-            itemDescriptions[i] = null;
-            itemPrices[i] = 0;
-        }
-        itemCount = 0;
-        tipMethod = 3;
-        tipValue = 0;
-
+        ClearAll();
         Console.WriteLine("All items have been cleared.");
     }
 
-    static void SaveToFile()
+    static void HandleSaveToFile()
     {
         if (itemCount == 0)
         {
@@ -221,10 +209,90 @@ class Program
             fileName += ".csv";
         }
 
-        // Шлях до папки проєкту (3 рівні вгору від bin/Debug/net...)
-        string projectPath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+        string projectPath = GetProjectPath();
         string fullPath = Path.Combine(projectPath, fileName);
 
+        if (SaveData(fullPath))
+        {
+            Console.WriteLine($"Write to file {fileName} was successful.");
+        }
+        else
+        {
+            Console.WriteLine("Error writing to file.");
+        }
+    }
+
+    static void HandleLoadFromFile()
+    {
+        string fileName = ReadString("Enter the file path to load items from: ", 1, 10);
+
+        if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName += ".csv";
+        }
+
+        string projectPath = GetProjectPath();
+        string fullPath = Path.Combine(projectPath, fileName);
+
+        if (!File.Exists(fullPath))
+        {
+            Console.WriteLine($"Error: File '{fileName}' does not exist in project folder.");
+            return;
+        }
+
+        if (LoadData(fullPath))
+        {
+            Console.WriteLine($"Read from {fileName} was successful.");
+        }
+        else
+        {
+            Console.WriteLine("Error reading from file or data format is invalid.");
+        }
+    }
+
+    #endregion
+
+    #region Pure Business Logic
+
+    static void AddItem(string description, double price)
+    {
+        itemDescriptions[itemCount] = description;
+        itemPrices[itemCount] = price;
+        itemCount++;
+    }
+
+    static void RemoveItem(int indexToRemove)
+    {
+        for (int i = indexToRemove; i < itemCount - 1; i++)
+        {
+            itemDescriptions[i] = itemDescriptions[i + 1];
+            itemPrices[i] = itemPrices[i + 1];
+        }
+        itemDescriptions[itemCount - 1] = "";
+        itemPrices[itemCount - 1] = 0;
+        itemCount--;
+    }
+
+    static void SetTip(int method, double value)
+    {
+        tipMethod = method;
+        tipValue = value;
+    }
+
+    static void ClearAll()
+    {
+        for (int i = 0; i < MaxItems; i++)
+        {
+            itemDescriptions[i] = "";
+            itemPrices[i] = 0;
+        }
+        itemCount = 0;
+        tipMethod = 3;
+        tipValue = 0;
+    }
+
+    static bool SaveData(string fullPath)
+    {
         try
         {
             using (StreamWriter writer = new StreamWriter(fullPath))
@@ -235,38 +303,20 @@ class Program
                     writer.WriteLine($"{safeDesc},{itemPrices[i]}");
                 }
             }
-            Console.WriteLine($"Write to file {fileName} was successful.");
+            return true;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error writing to file: {ex.Message}");
+            return false;
         }
     }
 
-    static void LoadFromFile()
+    static bool LoadData(string fullPath)
     {
-        string fileName = ReadString("Enter the file path to load items from: ", 1, 10);
-
-        if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
-        {
-            fileName += ".csv";
-        }
-
-        // Шлях до папки проєкту (3 рівні вгору від bin/Debug/net...)
-        string projectPath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
-        string fullPath = Path.Combine(projectPath, fileName);
-
-        if (!File.Exists(fullPath))
-        {
-            Console.WriteLine($"Error: File '{fileName}' does not exist in project folder.");
-            return;
-        }
-
         try
         {
             string[] lines = File.ReadAllLines(fullPath);
             int loadedCount = 0;
-
             string[] tempDescriptions = new string[MaxItems];
             double[] tempPrices = new double[MaxItems];
 
@@ -294,14 +344,11 @@ class Program
                 itemPrices[i] = tempPrices[i];
             }
             itemCount = loadedCount;
-            tipMethod = 3;
-            tipValue = 0;
-
-            Console.WriteLine($"Read from {fileName} was successful.");
+            return true;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error reading from file: {ex.Message}");
+            return false;
         }
     }
 
@@ -328,13 +375,26 @@ class Program
         return 0.0;
     }
 
+    static string GetProjectPath()
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        DirectoryInfo? d1 = Directory.GetParent(baseDir);
+        DirectoryInfo? d2 = d1?.Parent;
+        DirectoryInfo? d3 = d2?.Parent;
+        return d3?.FullName ?? baseDir;
+    }
+
+    #endregion
+
+    #region Input Parsers
+
     static int ReadInt(string prompt, int min, int max)
     {
         int result;
         while (true)
         {
             Console.Write(prompt);
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
             if (int.TryParse(input, out result) && result >= min && result <= max)
             {
                 return result;
@@ -349,7 +409,7 @@ class Program
         while (true)
         {
             Console.Write(prompt);
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
             if (double.TryParse(input, out result) && result >= min)
             {
                 return result;
@@ -363,12 +423,15 @@ class Program
         while (true)
         {
             Console.Write(prompt);
-            string input = Console.ReadLine()?.Trim();
-            if (!string.IsNullOrEmpty(input) && input.Length >= minLength && input.Length <= maxLength)
+            string? input = Console.ReadLine();
+            string trimmed = input?.Trim() ?? "";
+            if (trimmed.Length >= minLength && trimmed.Length <= maxLength)
             {
-                return input;
+                return trimmed;
             }
             Console.WriteLine($"Invalid input. String must be between {minLength} and {maxLength} characters.");
         }
     }
+
+    #endregion
 }
