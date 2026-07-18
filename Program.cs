@@ -45,7 +45,7 @@ class Program
                     SaveToFile();
                     break;
                 case 7:
-                    Console.WriteLine("Option 7 selected (Not implemented yet).");
+                    LoadFromFile();
                     break;
                 case 0:
                     Console.WriteLine("Good-bye and thanks for using this program.");
@@ -221,9 +221,13 @@ class Program
             fileName += ".csv";
         }
 
+        // Шлях до папки проєкту (3 рівні вгору від bin/Debug/net...)
+        string projectPath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+        string fullPath = Path.Combine(projectPath, fileName);
+
         try
         {
-            using (StreamWriter writer = new StreamWriter(fileName))
+            using (StreamWriter writer = new StreamWriter(fullPath))
             {
                 for (int i = 0; i < itemCount; i++)
                 {
@@ -236,6 +240,68 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"Error writing to file: {ex.Message}");
+        }
+    }
+
+    static void LoadFromFile()
+    {
+        string fileName = ReadString("Enter the file path to load items from: ", 1, 10);
+
+        if (!fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName += ".csv";
+        }
+
+        // Шлях до папки проєкту (3 рівні вгору від bin/Debug/net...)
+        string projectPath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+        string fullPath = Path.Combine(projectPath, fileName);
+
+        if (!File.Exists(fullPath))
+        {
+            Console.WriteLine($"Error: File '{fileName}' does not exist in project folder.");
+            return;
+        }
+
+        try
+        {
+            string[] lines = File.ReadAllLines(fullPath);
+            int loadedCount = 0;
+
+            string[] tempDescriptions = new string[MaxItems];
+            double[] tempPrices = new double[MaxItems];
+
+            for (int i = 0; i < lines.Length && loadedCount < MaxItems; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i])) continue;
+
+                string[] parts = lines[i].Split(',');
+                if (parts.Length >= 2)
+                {
+                    string desc = parts[0].Trim('"');
+                    if (double.TryParse(parts[1], out double price) && desc.Length >= 3 && desc.Length <= 20 && price > 0)
+                    {
+                        tempDescriptions[loadedCount] = desc;
+                        tempPrices[loadedCount] = price;
+                        loadedCount++;
+                    }
+                }
+            }
+
+            ClearAll();
+            for (int i = 0; i < loadedCount; i++)
+            {
+                itemDescriptions[i] = tempDescriptions[i];
+                itemPrices[i] = tempPrices[i];
+            }
+            itemCount = loadedCount;
+            tipMethod = 3;
+            tipValue = 0;
+
+            Console.WriteLine($"Read from {fileName} was successful.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading from file: {ex.Message}");
         }
     }
 
