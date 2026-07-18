@@ -33,7 +33,7 @@ class Program
                     Console.WriteLine("Option 2 selected (Not implemented yet).");
                     break;
                 case 3:
-                    Console.WriteLine("Option 3 selected (Not implemented yet).");
+                    AddTip();
                     break;
                 case 4:
                     DisplayBill();
@@ -94,6 +94,38 @@ class Program
         itemCount++;
 
         Console.WriteLine("Add item was successful.");
+    }
+
+    static void AddTip()
+    {
+        if (itemCount == 0)
+        {
+            Console.WriteLine("There are no items in the bill to add tip for.");
+            return;
+        }
+
+        double netTotal = CalculateNetTotal();
+        Console.WriteLine($"Net Total: {netTotal:C2}");
+        Console.WriteLine("1 - Tip Percentage");
+        Console.WriteLine("2 - Tip Amount");
+        Console.WriteLine("3 - No Tip");
+
+        int method = ReadInt("Enter Tip Method: ", 1, 3);
+        tipMethod = method;
+
+        if (method == 1)
+        {
+            tipValue = ReadDouble("Enter tip percentage: ", 0);
+        }
+        else if (method == 2)
+        {
+            tipValue = ReadDouble("Enter tip amount: ", 0);
+        }
+        else
+        {
+            tipValue = 0;
+            Console.WriteLine("Tip removed successfully.");
+        }
     }
 
     static void DisplayBill()
